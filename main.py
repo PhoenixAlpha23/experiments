@@ -1,13 +1,16 @@
-from fastapi import FastAPI
-import logging
+from fastapi import FastAPI, Request
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from app.api.routes import router
 
-app = FastAPI(title="File Share API")
+app = FastAPI()
 
-# logging setup
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-)
+templates = Jinja2Templates(directory="app/templates")
+
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
+@app.get("/")
+def home(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
 app.include_router(router)

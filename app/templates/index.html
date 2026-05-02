@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Manager</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f8;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        input[type="file"] {
+            padding: 6px;
+        }
+
+        button {
+            padding: 8px 16px;
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        .dropzone {
+            border: 2px dashed #3498db;
+            padding: 20px;
+            text-align: center;
+            color: #3498db;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .dropzone.dragover {
+            background-color: #ecf6fd;
+        }
+
+        ul#file-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        ul#file-list li {
+            padding: 10px;
+            margin-bottom: 5px;
+            background-color: #ecf0f1;
+            border-radius: 4px;
+        }
+
+        ul#file-list li a {
+            text-decoration: none;
+            color: #2c3e50;
+        }
+
+        ul#file-list li a:hover {
+            text-decoration: underline;
+            color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Upload File</h2>
+
+        <div class="dropzone" id="dropzone">Drag & Drop files here or click to select</div>
+        <form id="upload-form" action="/upload" method="post" enctype="multipart/form-data" style="display:none;">
+            <input type="file" name="file" id="file-input">
+            <button type="submit">Upload</button>
+        </form>
+
+        <h2>Files</h2>
+        <ul id="file-list"></ul>
+    </div>
+
+    <script>
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('file-input');
+        const uploadForm = document.getElementById('upload-form');
+
+        // Click dropzone to open file picker
+        dropzone.addEventListener('click', () => fileInput.click());
+
+        // Drag events
+        dropzone.addEventListener('dragover', e => {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+        });
+        dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+
+        dropzone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                uploadFile(files[0]);
+            }
+        });
+
+        // Handle file input change
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                uploadFile(fileInput.files[0]);
+            }
+        });
+
+        function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Authorization': 'Basic ' + btoa('admin:pass')
+                }
+            })
+            .then(res => {
+                if(res.ok) {
+                    alert(`Uploaded: ${file.name}`);
+                    fetchFiles();  // refresh list immediately
+                } else {
+                    alert('Upload failed');
+                }
+            })
+            .catch(err => console.error('Upload error:', err));
+        }
+
+        function fetchFiles() {
+            fetch('/files', {
+                headers: {
+                    'Authorization': 'Basic ' + btoa('admin:pass')
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                const list = document.getElementById('file-list');
+                list.innerHTML = '';
+                data.files.forEach(f => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<a href="/download/${encodeURIComponent(f)}">${f}</a>`;
+                    list.appendChild(li);
+                });
+            })
+            .catch(err => console.error('Error fetching files:', err));
+        }
+
+        // Initial fetch
+        fetchFiles();
+
+        // Auto-refresh every 5 seconds
+        setInterval(fetchFiles, 5000);
+    </script>
+</body>
+</html>
