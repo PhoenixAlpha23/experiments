@@ -7,32 +7,32 @@ from app.services.storage import save_file, list_all_files, get_file_path, class
 from app.models.schemas  import UploadResponse, FileListResponse, IngestResponse, RecallQuery, RecallResponse
 from app.brain.ingestor  import ingest, recall
 from app.brain.chroma    import collection_stats
+from typing import List
 
 router = APIRouter()
 logger = logging.getLogger("routes")
 
 
 # ── Existing: upload ──────────────────────────────────────────────────────────
-@router.post("/upload", response_model=UploadResponse)
+@router.post("/upload", response_model=List[UploadResponse])
 async def upload(
-    file:             UploadFile = File(...),
-    user:             str        = Depends(authenticate),
-    background_tasks: BackgroundTasks = BackgroundTasks(),
+    files:            List[UploadFile] = File(...),
+    user:             str              = Depends(authenticate),
+    background_tasks: BackgroundTasks  = BackgroundTasks(),
 ):
-    try:
-        filename, file_type, saved_path = save_file(file)
-        logger.info(f"{user} uploaded {filename} [{file_type}]")
-
-        # kick off indexing in the background so upload returns immediately
-        background_tasks.add_task(_index_file, str(saved_path), file_type, filename)
-
-        return UploadResponse(status="uploaded", file=filename)
-    except HTTPException:
-        raise
-    except Exception:
-        logger.exception("Upload failed")
-        raise HTTPException(status_code=500, detail="Upload failed")
-
+    results = []
+    for file in files:
+        try:
+            filename, file_type, saved_path = save_file(file)
+            logger.info(f"{user} uploaded {filename} [{file_type}]")
+            background_tasks.add_task(_index_file, str(saved_path), file_type, filename)
+            results.append(UploadResponse(status="uploaded", file=filename))
+        except HTTPException as e:
+            results.append(UploadResponse(status=f"failed: {e.detail}", file=file.filename or "unknown"))
+        except Exception:
+            logger.exception(f"Upload failed for {file.filename}")
+            results.append(UploadResponse(status="failed: server error", file=file.filename or "unknown"))
+    return results
 
 def _index_file(file_path: str, file_type: str, filename: str):
     """Background task — runs after upload returns."""

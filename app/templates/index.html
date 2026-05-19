@@ -244,7 +244,7 @@
             Drop a PDF or image here, or click to select
             <span>PDFs are auto-indexed after upload</span>
         </div>
-        <input type="file" id="file-input" style="display:none" accept=".pdf,.txt,.md,.jpg,.jpeg,.png,.webp">
+        <input type="file" id="file-input" style="display:none" accept=".pdf,.txt,.md,.jpg,.jpeg,.png,.webp" multiple>
 
         <!-- URL ingest -->
         <div class="url-row">
@@ -319,28 +319,36 @@
     dropzone.addEventListener('drop', e => {
         e.preventDefault();
         dropzone.classList.remove('dragover');
-        if (e.dataTransfer.files.length > 0) uploadFile(e.dataTransfer.files[0]);
+        if (e.dataTransfer.files.length > 0) uploadFiles(e.dataTransfer.files);
     });
     fileInput.addEventListener('change', () => {
-        if (fileInput.files.length > 0) uploadFile(fileInput.files[0]);
+        if (fileInput.files.length > 0) uploadFiles(fileInput.files);
     });
 
-    function uploadFile(file) {
-        setStatus(`Uploading ${file.name}...`);
+    function uploadFiles(fileList) {
         const formData = new FormData();
-        formData.append('file', file);
+        Array.from(fileList).forEach(f => formData.append('files', f));
 
-        fetch('/upload', { method: 'POST', body: formData, headers: authHeaders() })
-            .then(res => {
-                if (res.ok) {
-                    setStatus(`✓ Uploaded & indexing: ${file.name}`);
-                    fetchFiles();
-                    fetchStats();
-                } else {
-                    res.json().then(d => setStatus(`✗ ${d.detail || 'Upload failed'}`, true));
-                }
-            })
-            .catch(() => setStatus('✗ Upload error', true));
+        setStatus(`Uploading ${fileList.length} file(s)...`);
+
+        fetch('/upload', {
+            method: 'POST',
+            body: formData,
+            headers: authHeaders()
+        })
+        .then(res => res.json())
+        .then(data => {
+            const failed = data.filter(r => r.status.startsWith('failed'));
+            const ok     = data.filter(r => r.status === 'uploaded');
+            if (failed.length === 0) {
+                setStatus(`✓ Uploaded ${ok.length} file(s)`);
+            } else {
+                setStatus(`✓ ${ok.length} uploaded, ✗ ${failed.length} failed: ${failed.map(r=>r.file).join(', ')}`, true);
+            }
+            fetchFiles();
+            fetchStats();
+        })
+        .catch(() => setStatus('✗ Upload error', true));
     }
 
     // ── URL ingest ───────────────────────────────────────────────────────────
