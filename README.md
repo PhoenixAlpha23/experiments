@@ -4,6 +4,8 @@ A small, personal project to turn my old laptop into a **local file storage node
 
 Nothing fancy (yet). Just a simple way to move files from my phone → laptop without relying on external cloud services.
 
+-- Update: Adding webscraping for knowledge acumulation .
+
 ---
 
 ## What it does
