@@ -1,8 +1,3 @@
-"""
-Auto-tagging removed for now (keybert brings in heavy deps).
-
-"""
-
 import uuid
 import logging
 from typing import List, Optional

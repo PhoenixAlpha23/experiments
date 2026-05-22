@@ -1,16 +1,3 @@
-"""
-chroma.py
-─────────
-Temporary drop-in replacement for ChromaDB.
-Uses a plain JSON file on disk — zero extra dependencies.
-
-Same interface as the real chroma.py so nothing else in the codebase changes.
-When ready for real embeddings:
-  1. pip install chromadb sentence-transformers onnxruntime
-  2. Swap this file for the real chroma.py
-  That's it.
-"""
-
 import json
 from pathlib import Path
 from app.core.config import CHROMA_DIR

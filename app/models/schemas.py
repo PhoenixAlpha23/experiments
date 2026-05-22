@@ -6,21 +6,19 @@ class UploadResponse(BaseModel):
     file: str
 
 class FileListResponse(BaseModel):
-    files: List[dict]          # now returns {name, type} dicts
+    files: List[dict]          
 
-# ── Ingest ───────────────────────────────────────────────────────────────────
 class IngestResponse(BaseModel):
     status: str
     title: str
-    file_type: str             # "pdf" | "url" | "image"
+    file_type: str             
     tags: List[str]
     chunks_stored: int
 
-# ── Recall / Search ──────────────────────────────────────────────────────────
 class RecallQuery(BaseModel):
     query: str
     n_results: Optional[int] = 5
-    filter_type: Optional[str] = None   # "pdf" | "url" | "image" | None = all
+    filter_type: Optional[str] = None   
 
 class RecallResult(BaseModel):
     title: str

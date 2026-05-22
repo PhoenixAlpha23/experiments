@@ -1,13 +1,3 @@
-"""
-Splits extracted text into chunks for embedding.
-Completely self-contained — swap the strategy by changing one function.
-
-Current strategy: fixed-size word-based sliding window.
-To switch strategy later:
-  1. Write a new function with signature (text: str) -> List[str]
-  2. Point `chunk_text` at it — that's the only change needed anywhere.
-"""
-
 from typing import List
 from app.core.config import CHUNK_SIZE, CHUNK_OVERLAP
 
